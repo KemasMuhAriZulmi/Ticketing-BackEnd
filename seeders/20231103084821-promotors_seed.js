@@ -12,7 +12,7 @@ module.exports = {
      *   isBetaMember: false
      * }], {});
     */
-   await queryInterface.bulkInsert("promotoraccounts", [
+   await queryInterface.bulkInsert("promotors", [
     {
       username : "promotor-1",
       email : "p1@mail.com",
