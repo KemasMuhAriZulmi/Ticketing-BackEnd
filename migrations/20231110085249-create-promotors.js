@@ -9,6 +9,12 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
+      // surutan ---------------------- dikasi defaultValue, biar ga perlu input role manual
+      role: {
+        allowNull: false,
+        type: Sequelize.STRING,
+        defaultValue: "promotor"
+      },
       username: {
         allowNull: false,
         type: Sequelize.STRING
