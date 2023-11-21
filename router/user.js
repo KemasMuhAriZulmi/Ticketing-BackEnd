@@ -8,5 +8,6 @@ router.post("/login", userController.login);
 router.post("/keplogin", ValidateToken, userController.keeplogin);
 router.get("/detail", ValidateToken, userController.detail);
 router.post("/update", ValidateToken, userController.update);
+router.post("/update-password", ValidateToken, userController.updatePassword);
 
 module.exports = router;

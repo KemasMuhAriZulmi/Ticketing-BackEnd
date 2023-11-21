@@ -11,12 +11,11 @@ module.exports = {
       },
       username: {
         type: Sequelize.STRING,
-        allowNull: false,
         unique: true,
+        allowNull: false,
       },
       name: {
         type: Sequelize.STRING,
-        allowNull: false,
       },
       email: {
         type: Sequelize.STRING,
@@ -27,17 +26,22 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
+      img: {
+        type: Sequelize.STRING,
+      },
+      role: {
+        type: Sequelize.STRING,
+        defaultValue: "user",
+      },
       balance: {
         type: Sequelize.INTEGER,
         defaultValue: 0,
+        allowNull: false,
       },
       points: {
         type: Sequelize.INTEGER,
         defaultValue: 0,
-      },
-      refferal: {
-        type: Sequelize.STRING,
-        allowNull: true,
+        allowNull: false,
       },
       createdAt: {
         allowNull: false,

@@ -1,4 +1,4 @@
-const { user, refferals } = require("../models");
+const { users, refferals } = require("../models");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
@@ -9,7 +9,7 @@ module.exports = {
   // FEAT GET DATA : GIBRAN
   getData: async (req, res, next) => {
     try {
-      const result = await user.findAll();
+      const result = await users.findAll();
       return res.status(200).send({
         succes: true,
         message: "Get Data Users Successfully",
@@ -22,7 +22,7 @@ module.exports = {
   // FEAT REGISTER DATA : GIBRAN
   register: async (req, res, next) => {
     try {
-      const isExist = await user.findOne({
+      const isExist = await users.findOne({
         where: {
           [Op.or]: [{ email: req.body.email }, { username: req.body.username }],
         },
@@ -46,7 +46,7 @@ module.exports = {
       // Case if the user doesn't enter a referral code
       if (!req.body.refferal) {
         try {
-          const newUser = await user.create(req.body);
+          const newUser = await users.create(req.body);
           console.log(newUser.dataValues);
 
           const myReferral = generateUniqueCode();
@@ -89,7 +89,7 @@ module.exports = {
 
       try {
         // Case if the user enters a correct referral code
-        const createUser = await user.create({
+        const createUser = await users.create({
           username: req.body.username,
           email: req.body.email,
           password: req.body.password,
@@ -104,7 +104,7 @@ module.exports = {
         });
 
         // Update points for existing user who referred someone
-        const referringUser = await user.findOne({
+        const referringUser = await users.findOne({
           where: {
             id: reffedBy.dataValues.userid,
           },
@@ -113,7 +113,7 @@ module.exports = {
         if (referringUser) {
           const existingUserPoints = referringUser.dataValues.points;
           const updatedExistingUserPoints = existingUserPoints + 10;
-          await user.update(
+          await users.update(
             {
               points: updatedExistingUserPoints,
             },
@@ -166,7 +166,7 @@ module.exports = {
   login: async (req, res, next) => {
     console.log(req.body.password);
     try {
-      const result = await user.findOne({
+      const result = await users.findOne({
         where: {
           [Op.or]: [{ email: req.body.email }],
         },
@@ -221,7 +221,7 @@ module.exports = {
         }
       );
       const token2 = jwt.verify(token, process.env.SCRT_TKN);
-      const resultData = await user.findOne({
+      const resultData = await users.findOne({
         where: {
           id: token2.id,
         },
@@ -241,7 +241,7 @@ module.exports = {
   detail: async (req, res) => {
     console.log(req.token.id);
     try {
-      const result = await user.findOne({
+      const result = await users.findOne({
         where: {
           id: req.userData.id,
         },
@@ -259,11 +259,11 @@ module.exports = {
   },
   update: async (req, res) => {
     try {
-      const result = await user.update(
+      const result = await users.update(
         {
           username: req.body.username,
-          email: req.body.email,
           name: req.body.name,
+          email: req.body.email,
         },
         {
           where: {
@@ -276,6 +276,62 @@ module.exports = {
         message: "Account updated successfully",
         result: result,
       });
+    } catch (error) {
+      console.log(error);
+      return res.status(error.rc || 500).send(error);
+    }
+  },
+  updatePassword: async (req, res) => {
+    try {
+      if (
+        req.body.currentPassword &&
+        req.body.newPassword &&
+        req.body.confirmPassword
+      ) {
+        if (req.body.newPassword !== req.body.confirmPassword) {
+          return res.status(error.rc || 400).send({
+            message: "newPassword and conformPassword doesnt match",
+          });
+        }
+
+        const result = await users.findOne({
+          where: {
+            [Op.or]: [{ id: req.userData.id }],
+          },
+          raw: true,
+        });
+        console.log("MASUK");
+        console.log(result);
+        const isValid = await bcrypt.compare(
+          req.body.currentPassword,
+          result.password
+        );
+        if (isValid) {
+          const salt = await bcrypt.genSalt(10);
+          const hashPassword = await bcrypt.hash(req.body.newPassword, salt);
+          req.body.newPassword = hashPassword;
+
+          const result = await users.update(
+            {
+              password: req.body.newPassword,
+            },
+            {
+              where: {
+                id: req.userData.id,
+              },
+            }
+          );
+          return res.status(200).send({
+            success: true,
+            message: "Account updated successfully",
+            result: result,
+          });
+        } else {
+          return res.status(error.rc || 400).send({
+            message: "Input Current Pass Wrong",
+          });
+        }
+      }
     } catch (error) {
       console.log(error);
       return res.status(error.rc || 500).send(error);

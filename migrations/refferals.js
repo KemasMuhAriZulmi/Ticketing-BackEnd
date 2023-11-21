@@ -16,7 +16,11 @@ module.exports = {
       reffedtimes: {
         type: Sequelize.INTEGER,
         defaultValue: 0,
+      },
+      refferal: {
+        type: Sequelize.STRING,
         allowNull: false,
+        unique: true,
       },
       createdAt: {
         allowNull: false,
