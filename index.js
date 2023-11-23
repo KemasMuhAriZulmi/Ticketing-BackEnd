@@ -4,7 +4,6 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const bearerToken = require("express-bearer-token");
-
 app.use(bearerToken());
 app.use(express.json());
 app.use(cors());
@@ -14,12 +13,21 @@ app.get("/", (req, res) => {
 });
 
 // DEFINE ROUTER GIBRAN
-const { promotorRouter, userRouter, refferalsRouter } = require("./router");
+const {
+  promotorRouter,
+  userRouter,
+  refferalsRouter,
+  transactionRouter,
+} = require("./router");
 app.use("/user", userRouter);
 app.use("/promotor", promotorRouter);
 app.use("/refferals", refferalsRouter);
+app.use("/transaction", transactionRouter);
 
-//DEFINE ROUTER GIBRAN
+// ! SURUTAN - Router Events, EventsPromos
+const { eventRouter, eventPromoRouter } = require("./routers");
+app.use("/", eventRouter);
+app.use("/", eventPromoRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

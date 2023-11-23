@@ -2,7 +2,6 @@ const jwt = require("jsonwebtoken");
 
 module.exports = {
   ValidateRegis: async (req, res, next) => {
-    console.log(req.body.password);
     if (
       req.body.password.length >= 8 &&
       req.body.password === req.body.confirmPassword

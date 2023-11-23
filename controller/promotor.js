@@ -1,4 +1,4 @@
-const { promotor } = require("../models");
+const { promotors } = require("../models");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
@@ -6,7 +6,7 @@ module.exports = {
   // FEAT GET DATA : GIBRAN
   getData: async (req, res, next) => {
     try {
-      const result = await promotor.findAll();
+      const result = await promotors.findAll();
       return res.status(200).send({
         succes: true,
         message: "Get Data Promotors Successfully",
@@ -19,7 +19,7 @@ module.exports = {
   // FEAT REGISTER DATA : GIBRAN
   register: async (req, res, next) => {
     try {
-      const isExist = await promotor.findOne({
+      const isExist = await promotors.findOne({
         where: {
           [Op.or]: [{ email: req.body.email }, { username: req.body.username }],
         },
@@ -46,7 +46,7 @@ module.exports = {
       const salt = await bcrypt.genSalt(10);
       const hashPassword = await bcrypt.hash(req.body.password, salt);
       req.body.password = hashPassword;
-      await promotor.create(req.body);
+      await promotors.create(req.body);
 
       return res.status(201).send({
         succes: true,
@@ -60,7 +60,7 @@ module.exports = {
   login: async (req, res, next) => {
     console.log("masuk");
     try {
-      const result = await promotor.findOne({
+      const result = await promotosr.findOne({
         where: {
           email: req.body.email,
         },
