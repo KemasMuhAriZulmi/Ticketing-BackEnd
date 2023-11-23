@@ -103,7 +103,7 @@ module.exports = {
         const itemTotalWithFee = itemSubtotal + newTransaction.fee;
 
         return items.create({
-          transactionId: transactionId,
+          transactionid: transactionId,
           ticketid: val.ticketid,
           quantity: val.quantity,
           price: isTicket.price,
@@ -130,6 +130,104 @@ module.exports = {
     } catch (error) {
       console.log(error);
       return res.status(error.rc || 500).send(error);
+    }
+  },
+  detail: async (req, res, next) => {
+    try {
+      const query = req.query;
+      const excludeAttributes = ["deletedAt", "buyerid", "buyerId"];
+
+      if (query.id) {
+        // Case: Retrieve a single transaction by ID
+        const result = await transactions.findOne({
+          where: {
+            id: query.id,
+          },
+          attributes: {
+            exclude: excludeAttributes,
+          },
+          include: [
+            {
+              model: items,
+              attributes: ["ticketid", "quantity", "price", "total"],
+            },
+            {
+              model: buyers,
+              attributes: [
+                "name",
+                "phone",
+                "country",
+                "province",
+                "city",
+                "email",
+                "poscode",
+                "address",
+              ],
+            },
+          ],
+        });
+
+        if (!result) {
+          throw new Error("Transaction not found");
+        }
+
+        return res.status(200).send({
+          success: true,
+          message: "Get Data transaction Successfully",
+          data: result,
+        });
+      } else if (query.sort && query.order) {
+        // Case: Retrieve transactions with sorting
+        const result = await transactions.findAll({
+          attributes: {
+            exclude: excludeAttributes,
+          },
+          order: [[query.sort, query.order]],
+        });
+
+        if (!result || result.length === 0) {
+          throw new Error("No transactions found with the given criteria");
+        }
+
+        return res.status(200).send({
+          success: true,
+          message: "Get Data transaction Successfully",
+          data: result,
+        });
+      } else {
+        throw new Error("Invalid query parameters");
+      }
+    } catch (error) {
+      console.error(error);
+      return res.status(500).send({
+        success: false,
+        message: "Get Data Failed",
+        error: error.message || "Internal Server Error",
+      });
+    }
+  },
+  checkout: async (req, res, next) => {
+    try {
+      const result = await transactions.update(
+        { ispaid: true },
+        {
+          where: {
+            id: req.params.id,
+          },
+        }
+      );
+      if (result > 0) {
+        res.status(200).send({ success: true, message: "Succes Checkout" });
+      } else {
+        res.status(404).send({ success: true, message: "Checkout Not Found" });
+      }
+    } catch (error) {
+      console.error(error);
+      return res.status(500).send({
+        success: false,
+        message: "Get Data Failed",
+        error: error.message || "Internal Server Error",
+      });
     }
   },
 };
