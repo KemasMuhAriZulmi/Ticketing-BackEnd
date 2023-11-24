@@ -383,7 +383,7 @@ module.exports = {
         to: req.body.email,
         subject: "Password Reset",
         html: `<h1>Hello, ${result.username}</h1>
-        <a href="http://localhost:5173/forgotpass?${token}">http://localhost:5173/</a>`,
+        <a href="http://localhost:5173/forgotpass?token=${token}">http://localhost:5173/</a>`,
       });
       console.log(result);
     } catch (error) {
