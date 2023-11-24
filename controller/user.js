@@ -368,6 +368,10 @@ module.exports = {
         raw: true,
       });
 
+      if (!result) {
+        return res.status(404).send("User not found");
+      }
+
       const token = jwt.sign(
         {
           email: result.email,
@@ -378,17 +382,22 @@ module.exports = {
         }
       );
 
+      const resetPasswordLink = `http://localhost:5173/forgotpass?token=${token}`;
+
       await transporter.sendMail({
         from: "admin@gmail.com",
         to: req.body.email,
         subject: "Password Reset",
         html: `<h1>Hello, ${result.username}</h1>
-        <a href="http://localhost:5173/forgotpass?token=${token}">http://localhost:5173/</a>`,
+              <a href="${resetPasswordLink}">${resetPasswordLink}</a>`,
       });
-      console.log(result);
+
+      res
+        .status(200)
+        .send({ succes: true, message: "email sent successfully" });
     } catch (error) {
-      console.log(error);
-      return res.status(error.rc || 500).send(error);
+      console.error(error);
+      res.status(500).send("Internal Server Error");
     }
   },
 };
