@@ -18,6 +18,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   promotors.init({
+    role: DataTypes.STRING,
     username: DataTypes.STRING,
     password: DataTypes.STRING,
     balance: DataTypes.INTEGER,
