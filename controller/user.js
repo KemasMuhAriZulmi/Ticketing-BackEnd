@@ -1,9 +1,10 @@
 const { users, refferals } = require("../models");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 const db = require("../models");
 const { generateUniqueCode } = require("../helper/utils");
+const transporter = require("../helper/mailer");
 
 module.exports = {
   // FEAT GET DATA : GIBRAN
@@ -332,6 +333,59 @@ module.exports = {
           });
         }
       }
+    } catch (error) {
+      console.log(error);
+      return res.status(error.rc || 500).send(error);
+    }
+  },
+  forgotPass: async (req, res, next) => {
+    console.log("MASUK");
+    try {
+      if (req.body.password === req.body.confirmPassword) {
+        const token = jwt.verify(req.token, process.env.SCRT_TKN);
+        console.log(token.email);
+        const salt = await bcrypt.genSalt(10);
+        const hashPassword = await bcrypt.hash(req.body.password, salt);
+        req.body.password = hashPassword;
+        const result = await users.update(
+          { password: req.body.password },
+          { where: { email: token.email } }
+        );
+        console.log(result);
+        return res.status(200).send("Updated password successfully");
+      }
+    } catch (error) {
+      console.log(error);
+      return res.status(error.rc || 500).send(error);
+    }
+  },
+  sentemail: async (req, res, next) => {
+    try {
+      const result = await users.findOne({
+        where: {
+          email: req.body.email,
+        },
+        raw: true,
+      });
+
+      const token = jwt.sign(
+        {
+          email: result.email,
+        },
+        process.env.SCRT_TKN,
+        {
+          expiresIn: "1h",
+        }
+      );
+
+      await transporter.sendMail({
+        from: "admin@gmail.com",
+        to: req.body.email,
+        subject: "Password Reset",
+        html: `<h1>Hello, ${result.username}</h1>
+        <a href="http://localhost:5173/forgotpass?${token}">http://localhost:5173/</a>`,
+      });
+      console.log(result);
     } catch (error) {
       console.log(error);
       return res.status(error.rc || 500).send(error);
