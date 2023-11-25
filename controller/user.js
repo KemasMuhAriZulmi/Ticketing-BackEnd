@@ -400,4 +400,70 @@ module.exports = {
       res.status(500).send("Internal Server Error");
     }
   },
+  changePass: async (req, res, next) => {
+    try {
+      if (
+        req.body.newPassword.length >= 8 &&
+        req.body.newPassword === req.body.confirmPassword
+      ) {
+        const user = await users.findOne({
+          where: {
+            id: req.userData.id,
+          },
+          raw: true,
+        });
+
+        if (!user) {
+          return res.status(404).send({
+            success: false,
+            message: "User not found",
+          });
+        }
+
+        const isValid = await bcrypt.compare(
+          req.body.currentPassword,
+          user.password
+        );
+
+        if (isValid) {
+          const salt = await bcrypt.genSalt(10);
+          const hashPassword = await bcrypt.hash(req.body.newPassword, salt);
+
+          const result = await users.update(
+            {
+              password: hashPassword,
+            },
+            {
+              where: {
+                id: req.userData.id,
+              },
+            }
+          );
+
+          return res.status(200).send({
+            success: true,
+            message: "Password updated successfully",
+            result: result,
+          });
+        } else {
+          return res.status(401).send({
+            success: false,
+            message: "Invalid current password",
+          });
+        }
+      } else {
+        return res.status(400).send({
+          success: false,
+          message:
+            "New password and confirm password do not match or do not meet the minimum length requirement",
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      return res.status(500).send({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  },
 };

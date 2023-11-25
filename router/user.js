@@ -10,5 +10,6 @@ router.get("/detail", ValidateToken, userController.detail);
 router.post("/update", ValidateToken, userController.update);
 router.post("/sentemail", userController.sentemail);
 router.post("/updatepass", userController.forgotPass);
+router.post("/updatepassword", ValidateToken, userController.changePass);
 
 module.exports = router;

@@ -132,13 +132,72 @@ module.exports = {
       return res.status(error.rc || 500).send(error);
     }
   },
+
+  checkout: async (req, res, next) => {
+    try {
+      const transaction = await transactions.findOne({
+        where: {
+          id: req.params.id,
+        },
+        raw: true,
+      });
+      console.log(transaction);
+      if (!transaction) {
+        return res
+          .status(404)
+          .send({ success: false, message: "Transaction not found" });
+      }
+
+      const createdAt = new Date(transaction.createdAt);
+      const currentTime = new Date();
+
+      const timeDifferenceInMilliseconds = currentTime - createdAt;
+
+      const timeDifferenceInHours =
+        timeDifferenceInMilliseconds / (1000 * 60 * 60);
+
+      if (timeDifferenceInHours < 1) {
+        const updateResult = await transactions.update(
+          { ispaid: true },
+          {
+            where: {
+              id: req.params.id,
+            },
+          }
+        );
+
+        if (updateResult > 0) {
+          res.status(200).send({ success: true, message: "Success Checkout" });
+        } else {
+          res
+            .status(404)
+            .send({ success: false, message: "Checkout not found" });
+        }
+      } else {
+        const result = await users.destroy({
+          where: {
+            id: req.params.id,
+          },
+        });
+        return res
+          .status(400)
+          .send({ success: false, message: "Checkout expired after 1 hour" });
+      }
+    } catch (error) {
+      console.error(error);
+      return res.status(500).send({
+        success: false,
+        message: "Get Data Failed",
+        error: error.message || "Internal Server Error",
+      });
+    }
+  },
   detail: async (req, res, next) => {
     try {
       const query = req.query;
       const excludeAttributes = ["deletedAt", "buyerid", "buyerId"];
 
-      if (query.id) {
-        // Case: Retrieve a single transaction by ID
+      if (query.id && !query.sort && !query.order) {
         const result = await transactions.findOne({
           where: {
             id: query.id,
@@ -206,23 +265,30 @@ module.exports = {
       });
     }
   },
-  checkout: async (req, res, next) => {
+
+  mybooks: async (req, res, next) => {
     try {
-      const result = await transactions.update(
-        { ispaid: true },
-        {
-          where: {
-            id: req.params.id,
-          },
-        }
-      );
-      if (result > 0) {
-        res.status(200).send({ success: true, message: "Succes Checkout" });
-      } else {
-        res.status(404).send({ success: true, message: "Checkout Not Found" });
+      const excludeAttributes = ["deletedAt", "buyerid", "buyerId"];
+      const result = await transactions.findAll({
+        where: {
+          userid: req.userData.id,
+        },
+        attributes: {
+          exclude: excludeAttributes,
+        },
+      });
+
+      if (!result) {
+        throw new Error("Transaction not found");
       }
+
+      return res.status(200).send({
+        success: true,
+        message: "Get Data transaction Successfully",
+        data: result,
+      });
     } catch (error) {
-      console.error(error);
+      console.log(error);
       return res.status(500).send({
         success: false,
         message: "Get Data Failed",
