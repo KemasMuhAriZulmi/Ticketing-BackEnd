@@ -11,7 +11,10 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      tickets.belongsTo(models.events);
+      tickets.belongsTo(models.events, {
+        // onDelete : "CASCADE",
+        // onUpdate : "CASCADE"
+      });
     }
   }
   tickets.init({

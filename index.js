@@ -12,9 +12,10 @@ app.get("/", (req, res) => {
 });
 
 // ! SURUTAN - Router Events, EventsPromos
-const { eventRouter, eventPromoRouter } = require("./routers");
+const { eventRouter, ticketRouter, eventPromoRouter } = require("./routers");
 app.use("/", eventRouter);
 app.use("/", eventPromoRouter);
+app.use("/", ticketRouter)
 
 // ! RUN SERVER
 app.listen(PORT, () => {

@@ -15,7 +15,9 @@ module.exports = {
         references : {
           model : "events",
           key : "id"
-        }
+        },
+        onUpdate : "CASCADE",
+        onDelete : "CASCADE"
       },
       ticketType: {
         allowNull: false,
