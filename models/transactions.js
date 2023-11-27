@@ -4,7 +4,7 @@ module.exports = (sequelize, DataTypes) => {
   class transactions extends Model {
     static associate(models) {
       transactions.hasMany(models.items, { foreignKey: "transactionid" });
-      transactions.hasOne(models.buyers);
+      transactions.hasOne(models.buyers, { foreignKey: "transactionid" });
     }
   }
   transactions.init(

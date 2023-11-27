@@ -5,6 +5,7 @@ const {
   items,
   eventsPromotions,
   events,
+  users,
 } = require("../models");
 const { Op } = require("sequelize");
 
@@ -239,15 +240,6 @@ module.exports = {
             .status(404)
             .send({ success: false, message: "Checkout not found" });
         }
-      } else {
-        const result = await users.destroy({
-          where: {
-            id: req.params.id,
-          },
-        });
-        return res
-          .status(400)
-          .send({ success: false, message: "Checkout expired after 1 hour" });
       }
     } catch (error) {
       console.error(error);
