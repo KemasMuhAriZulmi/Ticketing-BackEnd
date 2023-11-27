@@ -9,5 +9,6 @@ router.patch("/checkout/:id", ValidateToken, transactionController.checkout);
 router.get("/mybooks", ValidateToken, transactionController.mybooks);
 router.get("/whatevents/:id", transactionController.checkEvent);
 router.get("/getevents", transactionController.getEvent);
+router.get("/ticket", transactionController.getTicket);
 
 module.exports = router;

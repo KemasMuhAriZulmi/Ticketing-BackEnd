@@ -393,4 +393,23 @@ module.exports = {
       });
     }
   },
+  getTicket: async (req, res, next) => {
+    console.log(req.query);
+    try {
+      const result = await tickets.findAll({
+        where: {
+          eventId: req.query.eventId,
+        },
+        raw: true,
+      });
+      res.status(200).send(result);
+    } catch (error) {
+      console.log(error);
+      return res.status(500).send({
+        success: false,
+        message: "Get Data Failed",
+        error: error.message || "Internal Server Error",
+      });
+    }
+  },
 };
