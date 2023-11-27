@@ -52,7 +52,6 @@ module.exports = {
           );
         }
       }
-
       const transactionId = newTransaction.id;
 
       const buyerData = await buyers.create({
@@ -72,11 +71,12 @@ module.exports = {
           where: {
             id: val.ticketid,
             quota: {
-              [Op.and]: [{ [Op.gt]: 0 }, { [Op.gte]: val.quantity }],
+              [Op.and]: [{ [Op.gt]: 0 }],
             },
           },
         });
 
+        console.log("SAMPEK SINI");
         if (!isTicket) {
           throw new Error(
             `Ticket with id ${val.ticketid} was not found or may be out of stock`
