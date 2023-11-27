@@ -4,6 +4,7 @@ const {
   buyers,
   items,
   eventsPromotions,
+  events,
 } = require("../models");
 const { Op } = require("sequelize");
 
@@ -15,18 +16,13 @@ module.exports = {
     try {
       const total = req.body.totalItems;
 
-      console.log(
-        req.userData.id,
-        req.body.payment,
-        req.body.eventid,
-        `INV-${new Date().getTime()}${Math.floor(Math.random() * 1000)}`
-      );
+      const invoiceNumber = `INV-${new Date().getTime()}${Math.floor(
+        Math.random() * 1000
+      )}`;
 
       const newTransaction = await transactions.create({
         userid: req.userData.id,
-        invoice: `INV-${new Date().getTime()}${Math.floor(
-          Math.random() * 1000
-        )}`,
+        invoice: invoiceNumber,
         payment: req.body.payment,
         bookingdate: new Date(),
         promocode: req.body.promocode || null,
@@ -35,29 +31,28 @@ module.exports = {
         ispaid: false,
       });
 
-      console.log(!newTransaction.promoid);
-
-      if (!newTransaction.promoid) {
+      if (newTransaction.promocode) {
         const isPromo = await eventsPromotions.findOne({
           where: {
             voucherName: newTransaction.promocode,
           },
         });
 
-        await eventsPromotions.update(
-          {
-            useLimit: isPromo - 1,
-          },
-          {
-            where: {
-              voucherName: newTransaction.promocode,
+        if (isPromo) {
+          await eventsPromotions.update(
+            {
+              useLimit: isPromo.useLimit - 1,
             },
-          }
-        );
+            {
+              where: {
+                voucherName: newTransaction.promocode,
+              },
+            }
+          );
+        }
       }
 
       const transactionId = newTransaction.id;
-      console.log(transactionId);
 
       const buyerData = await buyers.create({
         transactionid: transactionId,
@@ -71,7 +66,7 @@ module.exports = {
         address: req.body.address,
       });
 
-      const itemPromises = total.map(async (val, idx) => {
+      const itemPromises = total.map(async (val) => {
         const isTicket = await tickets.findOne({
           where: {
             id: val.ticketid,
@@ -82,9 +77,8 @@ module.exports = {
         });
 
         if (!isTicket) {
-          console.log("MASUK ELSE");
           throw new Error(
-            `Ticket with id ${val.ticketid} was not found or maybe out of stock`
+            `Ticket with id ${val.ticketid} was not found or may be out of stock`
           );
         }
 
@@ -120,6 +114,77 @@ module.exports = {
 
       await newTransaction.update({ subtotal: calculatedTotal });
 
+      const expirationTime = 60 * 60 * 1000;
+      const expirationDate = new Date(
+        newTransaction.bookingdate.getTime() + expirationTime
+      );
+
+      setTimeout(async () => {
+        try {
+          const activeTransaction = await transactions.findOne({
+            where: {
+              id: transactionId,
+              ispaid: false,
+              createdAt: {
+                [Op.lte]: expirationDate,
+              },
+            },
+          });
+
+          if (activeTransaction) {
+            // Soft deleting the expired transaction
+            await transactions.destroy({
+              where: {
+                id: transactionId,
+              },
+            });
+
+            // Deleting buyer data associated with the transaction
+            await buyers.destroy({
+              where: {
+                transactionid: transactionId,
+              },
+            });
+
+            // Retrieving items in the transaction
+            const itemsInTransaction = await items.findAll({
+              where: {
+                transactionid: transactionId,
+              },
+            });
+
+            // Restoring ticket quotas
+            const restoreQuotaPromises = itemsInTransaction.map(
+              async (item) => {
+                const ticket = await tickets.findByPk(item.ticketid);
+
+                if (ticket) {
+                  await tickets.update(
+                    {
+                      quota: ticket.quota + item.quantity,
+                    },
+                    {
+                      where: {
+                        id: item.ticketid,
+                      },
+                    }
+                  );
+                }
+              }
+            );
+
+            await Promise.all(restoreQuotaPromises);
+
+            console.log(
+              `Transaction ${transactionId} has expired and was soft-deleted.`
+            );
+          }
+        } catch (error) {
+          console.error("Error while handling transaction expiration:", error);
+        }
+      }, expirationTime);
+
+      // Sending success response
       res.status(200).send({
         success: true,
         message: "Transaction created successfully",
@@ -128,12 +193,13 @@ module.exports = {
         buyerData: buyerData,
       });
     } catch (error) {
-      console.log(error);
-      return res.status(error.rc || 500).send(error);
+      console.error(error);
+      res.status(error.rc || 500).send(error);
     }
   },
 
   checkout: async (req, res, next) => {
+    console.log("In");
     try {
       const transaction = await transactions.findOne({
         where: {
@@ -236,10 +302,12 @@ module.exports = {
           data: result,
         });
       } else if (query.sort && query.order) {
-        // Case: Retrieve transactions with sorting
         const result = await transactions.findAll({
           attributes: {
             exclude: excludeAttributes,
+          },
+          where: {
+            userid: req.userData.id,
           },
           order: [[query.sort, query.order]],
         });
@@ -287,6 +355,43 @@ module.exports = {
         message: "Get Data transaction Successfully",
         data: result,
       });
+    } catch (error) {
+      console.log(error);
+      return res.status(500).send({
+        success: false,
+        message: "Get Data Failed",
+        error: error.message || "Internal Server Error",
+      });
+    }
+  },
+  checkEvent: async (req, res, next) => {
+    try {
+      const result = await events.findOne({
+        where: {
+          id: req.params.id,
+        },
+        raw: true,
+      });
+      if (result) {
+        res.status(200).send(result);
+      } else {
+        res.status(404).send({ Success: false, message: "Not Found" });
+      }
+    } catch (error) {
+      console.log(error);
+      return res.status(500).send({
+        success: false,
+        message: "Get Data Failed",
+        error: error.message || "Internal Server Error",
+      });
+    }
+  },
+  getEvent: async (req, res, next) => {
+    try {
+      const result = await events.findAll({
+        raw: true,
+      });
+      res.status(200).send(result);
     } catch (error) {
       console.log(error);
       return res.status(500).send({

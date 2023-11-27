@@ -240,7 +240,7 @@ module.exports = {
     }
   },
   detail: async (req, res) => {
-    console.log(req.token.id);
+    console.log("test", req.token.id);
     try {
       const result = await users.findOne({
         where: {
@@ -253,18 +253,23 @@ module.exports = {
         succes: true,
         message: "Get Data Users Successfully",
         data: result,
+        img: `/public/profileimage/${result.img}`,
       });
     } catch (error) {
       return res.status(500).send(error);
     }
   },
   update: async (req, res) => {
+    console.log("File:", req.file);
+    console.log("Body:", req.body);
+
     try {
       const result = await users.update(
         {
           username: req.body.username,
           name: req.body.name,
           email: req.body.email,
+          img: req.file.filename,
         },
         {
           where: {
@@ -272,16 +277,22 @@ module.exports = {
           },
         }
       );
+
       return res.status(200).send({
         success: true,
         message: "Account updated successfully",
         result: result,
       });
     } catch (error) {
-      console.log(error);
-      return res.status(error.rc || 500).send(error);
+      console.error(error);
+
+      return res.status(error.rc || 500).send({
+        success: false,
+        message: "Failed to update the account. Please try again later.",
+      });
     }
   },
+
   updatePassword: async (req, res) => {
     try {
       if (
@@ -457,6 +468,29 @@ module.exports = {
           message:
             "New password and confirm password do not match or do not meet the minimum length requirement",
         });
+      }
+    } catch (error) {
+      console.error(error);
+      return res.status(500).send({
+        success: false,
+        message: "Internal server error",
+      });
+    }
+  },
+  checkrole: async (req, res, next) => {
+    try {
+      if (req.userData) {
+        const result = await users.findOne({
+          where: {
+            id: req.userData.id,
+          },
+          attributes: {
+            exclude: ["password"],
+          },
+          raw: true,
+        });
+
+        res.status(200).send(result.role);
       }
     } catch (error) {
       console.error(error);

@@ -32,11 +32,8 @@ module.exports = {
         type: Sequelize.BOOLEAN,
         defaultValue: false,
       },
-      deleteAt: {
+      deletedAt: {
         type: Sequelize.DATE,
-      },
-      buyerid: {
-        type: Sequelize.INTEGER,
       },
       bookingdate: {
         type: Sequelize.DATE,

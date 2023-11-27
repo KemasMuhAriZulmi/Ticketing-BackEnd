@@ -7,5 +7,7 @@ router.post("/create", ValidateToken, transactionController.create);
 router.get("/detail?", ValidateToken, transactionController.detail);
 router.patch("/checkout/:id", ValidateToken, transactionController.checkout);
 router.get("/mybooks", ValidateToken, transactionController.mybooks);
+router.get("/whatevents/:id", transactionController.checkEvent);
+router.get("/getevents", transactionController.getEvent);
 
 module.exports = router;

@@ -13,6 +13,7 @@ app.get("/", (req, res) => {
 });
 
 // DEFINE ROUTER GIBRAN
+
 const {
   promotorRouter,
   userRouter,
@@ -23,6 +24,7 @@ app.use("/user", userRouter);
 app.use("/promotor", promotorRouter);
 app.use("/refferals", refferalsRouter);
 app.use("/transaction", transactionRouter);
+app.use("/public", express.static("public"));
 
 // ! SURUTAN - Router Events, EventsPromos
 const { eventRouter, eventPromoRouter } = require("./routers");
