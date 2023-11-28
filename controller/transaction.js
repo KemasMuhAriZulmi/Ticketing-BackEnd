@@ -70,13 +70,13 @@ module.exports = {
         const isTicket = await tickets.findOne({
           where: {
             id: val.ticketid,
-            quota: {
-              [Op.and]: [{ [Op.gt]: 0 }],
-            },
+            // quota: {
+            //   [Op.and]: [{ [Op.gt]: 0 }, { [Op.gte]: val.quantity }],
+            // },
           },
         });
-
         console.log("SAMPEK SINI");
+
         if (!isTicket) {
           throw new Error(
             `Ticket with id ${val.ticketid} was not found or may be out of stock`

@@ -46,6 +46,7 @@ module.exports = {
       const salt = await bcrypt.genSalt(10);
       const hashPassword = await bcrypt.hash(req.body.password, salt);
       req.body.password = hashPassword;
+      console.log(req.body);
       await promotors.create(req.body);
 
       return res.status(201).send({
@@ -59,15 +60,17 @@ module.exports = {
   // FEAT LOGIN DATA : GIBRAN
   login: async (req, res, next) => {
     console.log("masuk");
+    console.log(req.body.email, req.body.password);
     try {
-      const result = await promotosr.findOne({
+      const result = await promotors.findOne({
         where: {
           email: req.body.email,
         },
         raw: true,
       });
+      console.log(result);
       const isValid = await bcrypt.compare(req.body.password, result.password);
-
+      console.log("TEST");
       if (isValid) {
         const { id, username, email, name, balance, jumlahbook } = result;
         const token = jwt.sign(

@@ -14,19 +14,19 @@ module.exports = {
      */
     await queryInterface.bulkInsert("eventspromotions", [
       {
-        eventId: 10,
+        eventId: 1,
         voucherName: "promoBCA",
         voucherValue: 30,
-        useLimit: 100,
+        useLimit: 1000,
         needPoint: true,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
       {
-        eventId: 11,
+        eventId: 2,
         voucherName: "promoBNI",
         voucherValue: 20,
-        useLimit: 100,
+        useLimit: 1000,
         needPoint: false,
         createdAt: new Date(),
         updatedAt: new Date(),
