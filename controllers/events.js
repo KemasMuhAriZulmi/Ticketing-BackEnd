@@ -1,164 +1,102 @@
-// import models from models
-const db = require("../models");
-const { events, eventsImages, tickets } = require("../models");
-const bcrypt = require("bcrypt");
-
-// ! Kurang : where promotorId = logged in promotor
+const db = require('../models');
+const {events} = require('../models/events');
+const {promotors} = require('../models/promotors');
+const {tickets} = require('../models/tickets');
+const {eventsPromotions} = require('../models/eventspromotions');
 
 module.exports = {
-    getAllEvents : async (req, res, next) => {
+    getAllEvents: async (req, res) => {
         try {
-            const result = await events.findAll({
-                //  ! Not Yet
-                // where : {
-                //     promotorId : promotorId,
-                // },
-                include : [
+            const allEvents = await events.findAll({
+                include: [
                     {
-                        model : eventsImages,
-                        attributes : ["eventId", "eventImage"],
-                        // required : true
+                        model: promotors,
+                        attributes: ['id', 'name', 'email', 'phone', 'address']
                     },
+                    {
+                        model: tickets,
+                        attributes: ['id', 'price', 'description']
+                    },
+                    {
+                        model: eventsPromotions,
+                        attributes: ['id', 'discount', 'promotionId']
+                    }
                 ]
             });
-            return res.status(200).send(result);
-        }
-        catch (error) {
+            res.status(200).json(allEvents);
+        } catch (error) {
             console.log(error);
-            return res.status(500).send({
-                success : false,
-                message : "error on getAllEvents",
-                error
-            });
-        };
+            res.status(500).json(error);
+        }
     },
-    
-    getEventDetail : async (req, res, next) => {
+    getEventById: async (req, res) => {
         try {
-            const result = await events.findOne({
-                where : {
-                    id : req.params.id,
-                },
-                include : [
+            const event = await events.findOne({
+                where: {id: req.params.id},
+                include: [
                     {
-                        model : eventsImages,
-                        attributes : ["eventId", "eventImage"],
-                        // required : true
+                        model: promotors,
+                        attributes: ['id', 'name', 'email', 'phone', 'address']
                     },
+                    {
+                        model: tickets,
+                        attributes: ['id', 'price', 'description']
+                    },
+                    {
+                        model: eventsPromotions,
+                        attributes: ['id', 'discount', 'promotionId']
+                    }
                 ]
             });
-            return res.status(200).send(result);
-        }
-        catch (error) {
+            res.status(200).send(event);
+        } catch (error) {
             console.log(error);
-            return res.status(500).send({
-                success : false,
-                message : "error on getEventDetail",
-                error
-            });
-        };
+            res.status(500).send(error);
+        }
     },
-
-    createEvent : async (req, res, next) => {
-        // # transaction - savepoint
-        const t = await db.sequelize.transaction();
+    createEvent: async (req, res) => {
         try {
-            // body : promotorId, name, description, startDate, endDate, location, category, createdAt, updatedAt
-            // Create Event
-            console.log("req body -----> ", req.body);
-            console.log("req file -----> ", req.file);
-
-            const uploadDataEvent = {
-                promotorId : req.body.promotorId,
-                name : req.body.name,
-                description : req.body.description,
-                startdate : req.body.startdate,
-                enddate : req.body.enddate,
-                location : req.body.location,
-                category : req.body.category,
-            };
-            // CREATE EVENT
-            const result = await events.create(uploadDataEvent, 
-                { transaction : t, } // # transaction - define
-            );
-            
-            // CREATE EVENT IMAGE
-            const uploadDataEventImage = {
-                eventId : result.dataValues.id,
-                eventImage : req.file.path
-            };
-            await eventsImages.create(uploadDataEventImage, 
-                { transaction : t, } // # transaction - define
-            );
-
-            // # transaction - commit
-            await t.commit();
-
-            return res.status(201).send({
-                success : true,
-                message : "Event Created",
-                "Created Event" : uploadDataEvent,
-                "Created Image" : uploadDataEventImage,
+            const uploader = helpers.uploader('events').fields([{name: 'image'}]);
+            uploader(req, res, async (error) => {
+                if (error) {
+                    console.log(error);
+                    res.status(500).send(error);
+                }
+                const {image} = req.files;
+                const imagePath = image ? '/' + image[0].path : null;
+                const newEvent = await events.create({
+                    ...req.body,
+                    image: imagePath
+                });
+                res.status(201).send(newEvent);
             });
-            
-        }
-        catch (error) {
-            // # transaction - rollback on error
-            await t.rollback();
+            const newEvent = await events.create(req.body);
+            res.status(201).send(newEvent);
+        } catch (error) {
             console.log(error);
-            return res.status(500).send({
-                success : false,
-                message : "error on createEvent",
-                error
-            });
-        };
+            res.status(500).send(error);
+        }
     },
-
-    updateEvent : async (req, res, next) => {
-        // # transaction - savepoint
-        const t = await db.sequelize.transaction();
+    updateEvent: async (req, res) => {
         try {
-
-            // { transaction : t, } // # transaction - define
-            
-            // # transaction - commit
-            await t.commit();
-            // RETURN
-            return res.status(200).send("updateevents");
-        }
-        catch (error) {
-            // # transaction - rollback on error
-            await t.rollback();
-            console.log(error);
-            return res.status(500).send({
-                success : false,
-                message : "error on updateEvent",
-                error
+            const updatedEvent = await events.update(req.body, {
+                where: {id: req.params.id}
             });
-        };
+            res.status(200).send(updatedEvent);
+        } catch (error) {
+            console.log(error);
+            res.status(500).send(error);
+        }
     },
-
-    deleteEvent : async (req, res, next) => {
-        const t = await db.sequelize.transaction();
+    deleteEvent: async (req, res) => {
         try {
-
-            // { transaction : t, } // # transaction - define
-            
-            // # transaction - commit
-            await t.commit();
-            // RETURN
-            return res.status(200).send("deleteevents");
-        }
-        catch (error) {
-            // # transaction - rollback on error
-            await t.rollback();
-            console.log(error);
-            return res.status(500).send({
-                success : false,
-                message : "error on deleteEvent",
-                error
+            const deletedEvent = await events.destroy({
+                where: {id: req.params.id}
             });
-        };
-        
-    },
-}
+            res.status(200).send(deletedEvent);
+        } catch (error) {
+            console.log(error);
+            res.status(500).send(error);
+        }
+    }
+};

@@ -5,7 +5,6 @@ const {
   items,
   eventsPromotions,
   events,
-  users,
 } = require("../models");
 const { Op } = require("sequelize");
 
@@ -70,9 +69,9 @@ module.exports = {
         const isTicket = await tickets.findOne({
           where: {
             id: val.ticketid,
-            quota: {
-              [Op.and]: [{ [Op.gt]: 0 }],
-            },
+            // quota: {
+            //   [Op.and]: [{ [Op.gt]: 0 }],
+            // },
           },
         });
 
